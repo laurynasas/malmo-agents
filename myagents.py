@@ -359,7 +359,7 @@ def build_graph(state_space):
     # plt.show()
 
 
-    return solution_path
+    return solution_path, start_location, goal_location, maze_map_locations
 
 #--------------------------------------------------------------------------------------
 #-- This class implements the Realistic Agent --#
@@ -411,6 +411,24 @@ class AgentSimple:
         self.solution_report.setMissionType(self.mission_type)
         self.solution_report.setMissionSeed(self.mission_seed)     
 
+    def get_turn_direction(self, old_co, new_co, facing_direction):
+        dx = new_co[0] - old_co[0]
+        dz = new_co[1] - old_co[1]
+        new_facing_direction = (dx,dz)
+        
+        if old_co == new_co:
+            print "new facing directon", facing_direction
+            return 0, facing_direction
+
+        print "new facing directon", new_facing_direction
+
+        if facing_direction == new_facing_direction:
+            return 0, new_facing_direction
+        if new_facing_direction[0] == 0:
+            return new_facing_direction[1]*facing_direction[0], new_facing_direction
+        return -new_facing_direction[0]*facing_direction[1], new_facing_direction
+
+
     def run_agent(self):   
         """ Run the Simple agent and log the performance and resource use """                
         
@@ -418,41 +436,65 @@ class AgentSimple:
         print('Generate and load the ' + self.mission_type + ' mission with seed ' + str(self.mission_seed) + ' allowing ' +  self.AGENT_MOVEMENT_TYPE + ' movements')            
         mission_xml = init_mission(self.agent_host, self.agent_port, self.AGENT_NAME, self.mission_type, self.mission_seed, self.AGENT_MOVEMENT_TYPE)            
         self.solution_report.setMissionXML(mission_xml)        
-        time.sleep(1)
+        time.sleep(3)
+        print "Just woke up"
         self.solution_report.start()
         
         state_t = self.agent_host.getWorldState()    
         
 
 
-        build_graph(self.state_space)
+        (solution_path, start_location, goal_location, maze_map_locations)  = build_graph(self.state_space)
 
-
-
-
-        #-- Set the randomness of the agent by seeding the random number generator --#    
-        agent_confusement_level = 0.8                
+        print solution_path,"--->",maze_map_locations
 
         #-- Main loop: --#
-        while state_t.is_mission_running:
-    
-            #-- Wait 0.5 sec --#
-            time.sleep(0.5)
-        
-            #-- Set the world state --#
-            state_t = self.agent_host.getWorldState()
-    
-            #-- Stop movement --#
-            if state_t.is_mission_running:
-                #-- Enforce a simple discrete behavior by stopping any continuous movement in progress --#
-                self.agent_host.sendCommand("move "  + str(0))
-                self.solution_report.addAction()
+        turn_direction = 0
+        x_old, z_old = maze_map_locations[start_location]
+        x_old+=0.5
+        z_old+=0.5
+        facing_direction = (0,1)
+        while state_t.is_mission_running and len(solution_path) != 0:
 
-                self.agent_host.sendCommand("pitch " + str(0))
-                self.solution_report.addAction()
-            
-                self.agent_host.sendCommand("turn "  + str(0))
-                self.solution_report.addAction()
+            print "&#&#&&#&#&#&#&#&#&", len(solution_path)
+            # This is telelportation agent
+            target_node = solution_path.pop()                
+            try:                
+                # if target_node.state == "S_01_09":
+                #     # Hack for AbsolutMovements: Do not take the full step to 1,9 ; then you will "die" we just need to be close enough (0.25)
+                #     x_new = 1
+                #     z_new = 8.75
+                # else:
+                #     xz_new = maze_map.locations.get(target_node.state);
+                #     x_new = xz_new[0] + 0.5 
+                #     z_new = xz_new[1] + 0.5 
+                
+                x_new, z_new = maze_map_locations[target_node.state]
+                x_new = float(x_new)+0.5
+                z_new = float(z_new)+0.5
+
+                old_co = (x_old, z_old)
+                new_co = (x_new, z_new)
+
+                turn_direction, facing_direction = self.get_turn_direction(old_co, new_co, facing_direction)
+                print turn_direction
+
+                self.agent_host.sendCommand("turn "  + str(turn_direction))
+                time.sleep(0.2)
+                self.agent_host.sendCommand("move "  + str(1)) # 1: means: move forward as fast as possible (in direction of sight)        
+
+                print("Action_t: Goto state " + target_node.state, x_new,z_new)
+                   
+                self.agent_host.sendCommand("tp " + str(x_new) + " " + str(217) + " " + str(z_new))                 
+
+                x_old = x_new
+                z_old = z_new
+
+            except RuntimeError as e:
+                print "Failed to send command:",e
+                pass    
+
+
 
             #-- Collect the number of rewards and add to reward_cumulative  --#
             #-- Note: Since we only observe the sensors and environment every a number of rewards may have accumulated in the buffer  --#
@@ -463,6 +505,7 @@ class AgentSimple:
             #-- Check if anything went wrong along the way  --#
             for error in state_t.errors:
                 print("Error:",error.text)
+
 
             #-- Handle the percepts/sensors  --#
             xpos  = None
