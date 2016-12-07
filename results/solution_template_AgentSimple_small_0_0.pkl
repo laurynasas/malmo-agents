@@ -47,14 +47,22 @@ p17
 cdatetime
 datetime
 p18
+<<<<<<< HEAD
 (S'\x07\xe0\x0c\x07\n&:\x0b2\xf7'
+=======
+(S'\x07\xe0\x0b\x04\x159\x0f\x05\xfbT'
+>>>>>>> 4be245f94c51388d5b0b3522b22afa0ed31f4263
 p19
 tp20
 Rp21
 sS'end_datetime_wallclock'
 p22
 g18
+<<<<<<< HEAD
 (S"\x07\xe0\x0c\x07\n'\t\x0e\xd0\xa3"
+=======
+(S'\x07\xe0\x0b\x04\x159\x1b\r^\xff'
+>>>>>>> 4be245f94c51388d5b0b3522b22afa0ed31f4263
 p23
 tp24
 Rp25
