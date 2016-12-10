@@ -73,7 +73,7 @@ class SolutionReport(object):
             else:
                 self.is_timeout = False
 
-                # ----------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------#
 
 
 class StateSpace(object):
@@ -368,7 +368,7 @@ class AgentRealistic:
     def _get_local_state_space_actions(self, grid, current_location):
         actions = {}
         locations = {}
-        walkable_blocks = [u'glowstone']
+        walkable_blocks = [u'glowstone', u'emerald_block']
 
         grid_matrix = self._convert_grid_arr_to_3x3matrix(grid)
         current_location_id = self._get_current_location_id(current_location)
@@ -553,6 +553,7 @@ class AgentSimple:
     Creates a maze graph from state space information and applies astar search to find the shortest path to the goal
     block whose location is known.
     '''
+
     def _find_solution_path(self, state_space):
         maze_map = UndirectedGraph(state_space.state_actions)
         maze_map_locations = state_space.state_locations
@@ -576,11 +577,11 @@ class AgentSimple:
 
         return solution_path, start_location, goal_location, maze_map_locations
 
-
     '''
     Finds the relative turning direction in order to make the movement of agent more realistic. The latter is
     calculated according to previous coordinates and coordinates after the action had been taken
     '''
+
     def get_turn_direction(self, old_co, new_co, facing_direction):
         dx = new_co[0] - old_co[0]
         dz = new_co[1] - old_co[1]
@@ -637,7 +638,7 @@ class AgentSimple:
 
             turn_direction, facing_direction = self.get_turn_direction(old_co, new_co, facing_direction)
 
-            self.agent_host.sendCommand("turn " + str(turn_direction ))
+            self.agent_host.sendCommand("turn " + str(turn_direction))
             time.sleep(0.2)
 
             # Apparently agent must perform the moving forward command in order for the turn teleportation to work,
@@ -740,7 +741,7 @@ class AgentRandom:
 
                 self.agent_host.sendCommand("turn " + str(0))
                 self.solution_report.addAction()
-                
+
             # -- Collect the number of rewards and add to reward_cumulative  --#
             # -- Note: Since we only observe the sensors and environment every a number of rewards may have accumulated in the buffer  --#
             for reward_t in state_t.rewards:
@@ -1075,9 +1076,6 @@ if __name__ == "__main__":
                     i_training_seed))
             agent_name = 'Agent' + args.agentname
             state_space = deepcopy(helper_agent.state_space)
-            # print "------>", state_space.nodes
-            # print "------>", state_space.state_actions
-
 
             agent_to_be_evaluated = eval(
                 agent_name + '(agent_host,args.malmoport,args.missiontype,i_training_seed,solution_report,state_space)')

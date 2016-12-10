@@ -2,3 +2,6 @@
 *.xml
 *.mp4
 *.pkl
+*.txt
+*.zip
+./mission_records/
